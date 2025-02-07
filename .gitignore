@@ -119,3 +119,4 @@ cython_debug/
 
 # macOS固有ファイル
 .DS_Store
+APP_Manager.json

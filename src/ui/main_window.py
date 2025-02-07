@@ -235,15 +235,10 @@ class MainWindow(QMainWindow):
         rename_action.triggered.connect(self._on_rename_selected)
         toolbar.addAction(rename_action)
         
-        toolbar.addSeparator()
-        
-        # 設定
-        settings_action = QAction("設定", self)
-        toolbar.addAction(settings_action)
-        
-        # ヘルプ
-        help_action = QAction("ヘルプ", self)
-        toolbar.addAction(help_action)
+        # 設定とヘルプは上段メニューバーのみに表示
+        # toolbar.addSeparator()
+        # settings_action = QAction("設定", self)
+        # toolbar.addAction(settings_action)
     
     def _setup_statusbar(self):
         """ステータスバーの設定"""
