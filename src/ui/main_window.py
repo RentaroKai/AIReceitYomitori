@@ -198,6 +198,8 @@ class MainWindow(QMainWindow):
         
         # 現在の画像フォルダを開く
         open_folder_action = QAction("フォルダを開く", self)
+        open_folder_action.setIcon(QIcon.fromTheme("folder-open", QIcon(":/icons/folder")))  # システムアイコンを使用
+        open_folder_action.setText("📁 フォルダを開く")
         open_folder_action.setToolTip("現在選択中の画像があるフォルダを開く")
         open_folder_action.triggered.connect(self._open_current_image_folder)
         toolbar.addAction(open_folder_action)
