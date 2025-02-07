@@ -18,6 +18,8 @@ class ManualDialog(BaseDialog):
         
         # マニュアルテキストの設定
         manual_text = """
+
+
         <h2>Gemini APIキーの取得方法</h2>
         <p>このアプリケーションを使用するには、Google AI StudioのGemini APIキーが必要です。</p>
         
@@ -36,6 +38,15 @@ class ManualDialog(BaseDialog):
         </ol>
         
         <p><strong>注意：</strong>APIキーは機密情報です。安全に管理してください。</p>
+
+        <h2>読み取り方</h2>
+        <p>1. ファイル → フォルダを開く</p>
+        <p>2. 画像を選択</p>
+        <p>3. 読み取り処理実行</p>
+        <p>結果を確認したあとは、チェック→リネーム(ファイル名)できる</p>
+        <p>ダブルクリックで編集できる。csv出力できる</p>
+        
+                
         """
         self.text_browser.setHtml(manual_text)
         

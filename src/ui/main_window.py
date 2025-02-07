@@ -221,7 +221,7 @@ class MainWindow(QMainWindow):
         toolbar.addSeparator()
         
         # 処理実行
-        process_action = QAction("処理実行", self)
+        process_action = QAction("読み取り処理実行", self)
         process_action.triggered.connect(self._on_process_selected)
         toolbar.addAction(process_action)
         
