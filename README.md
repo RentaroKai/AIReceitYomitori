@@ -5,8 +5,13 @@
 
 ## 使い方
 
-ダウンロードしてGeminiのAPIキーを入れる。APIキーはここから無料で手に入る（Googleに中身見られる）。有料にすれば中見られない。
+ダウンロードしてGeminiのAPIキーを入れる。APIキーはここから無料で手に入る
 https://aistudio.google.com/prompts/new_chat
+
+## 注意
+
+バックアップ機能まだ入れてない。GeminiAPIキーは無料だとGoogleが中身見れます。
+
 
 
 ## 機能

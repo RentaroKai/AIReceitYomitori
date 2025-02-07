@@ -76,6 +76,10 @@ class Config:
                 "separator": "_",
                 "duplicate_action": "add_number"
             },
+            "folders": {
+                "default_path": None,  # デフォルトフォルダパスの設定
+                "remember_last": True  # 最後に使用したフォルダを記憶するかどうか
+            },
             "recent_folders": []
         }
     

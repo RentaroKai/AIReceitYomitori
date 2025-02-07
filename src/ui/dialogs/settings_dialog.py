@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (
     QWidget, QLabel, QSpinBox, QCheckBox,
     QComboBox, QTabWidget, QVBoxLayout, QHBoxLayout,
-    QGroupBox, QFormLayout
+    QGroupBox, QFormLayout, QLineEdit, QPushButton, QFileDialog
 )
 from PySide6.QtCore import Qt
 
@@ -28,6 +28,30 @@ class SettingsDialog(BaseDialog):
         # 一般設定タブ
         general_tab = QWidget()
         general_layout = QVBoxLayout(general_tab)
+        
+        # フォルダ設定
+        folder_group = QGroupBox("フォルダ設定")
+        folder_layout = QFormLayout()
+        
+        # デフォルトフォルダパス
+        folder_path_layout = QHBoxLayout()
+        self.default_folder_path = QLineEdit()
+        self.default_folder_path.setPlaceholderText("デフォルトフォルダを選択してください")
+        self.default_folder_path.setReadOnly(True)
+        folder_path_layout.addWidget(self.default_folder_path)
+        
+        self.browse_button = QPushButton("参照...")
+        self.browse_button.clicked.connect(self._browse_folder)
+        folder_path_layout.addWidget(self.browse_button)
+        
+        folder_layout.addRow("デフォルトフォルダ:", folder_path_layout)
+        
+        # 最後に使用したフォルダを記憶
+        self.remember_last = QCheckBox("最後に使用したフォルダを記憶する")
+        folder_layout.addRow(self.remember_last)
+        
+        folder_group.setLayout(folder_layout)
+        general_layout.addWidget(folder_group)
         
         # バックアップ設定
         backup_group = QGroupBox("バックアップ設定")
@@ -96,6 +120,11 @@ class SettingsDialog(BaseDialog):
     
     def _load_current_settings(self):
         """現在の設定を読み込む"""
+        # フォルダ設定
+        folder_config = config.get("folders", {})
+        self.default_folder_path.setText(folder_config.get("default_path", ""))
+        self.remember_last.setChecked(folder_config.get("remember_last", True))
+        
         # バックアップ設定
         self.backup_generations.setValue(config.get("backup.generations", 3))
         
@@ -114,6 +143,10 @@ class SettingsDialog(BaseDialog):
     
     def accept(self):
         """OKボタンが押されたときの処理"""
+        # フォルダ設定の保存
+        config.set("folders.default_path", self.default_folder_path.text() or None)
+        config.set("folders.remember_last", self.remember_last.isChecked())
+        
         # バックアップ設定の保存
         config.set("backup.generations", self.backup_generations.value())
         
@@ -128,3 +161,13 @@ class SettingsDialog(BaseDialog):
         config.set("ui.font_size", self.font_size.value())
         
         super().accept() 
+
+    def _browse_folder(self):
+        """フォルダ選択ダイアログを表示"""
+        folder = QFileDialog.getExistingDirectory(
+            self,
+            "デフォルトフォルダの選択",
+            self.default_folder_path.text() or ""
+        )
+        if folder:
+            self.default_folder_path.setText(folder) 

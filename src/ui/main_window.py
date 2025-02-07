@@ -166,16 +166,6 @@ class MainWindow(QMainWindow):
                 )
                 columns_menu.addAction(action)
         
-        # ソート
-        sort_menu = view_menu.addMenu("ソート順")
-        # TODO: テーブルビューの列に応じて動的に追加
-        
-        view_menu.addSeparator()
-        
-        # フィルター
-        filter_action = QAction("フィルター...", self)
-        view_menu.addAction(filter_action)
-        
         # ログビューワー
         log_viewer_action = QAction("ログビューワー...", self)
         log_viewer_action.triggered.connect(self._show_log_viewer)
@@ -199,12 +189,6 @@ class MainWindow(QMainWindow):
         manual_action = QAction("マニュアル", self)
         manual_action.triggered.connect(self._show_manual)
         help_menu.addAction(manual_action)
-        
-        help_menu.addSeparator()
-        
-        # バージョン情報
-        about_action = QAction("バージョン情報", self)
-        help_menu.addAction(about_action)
     
     def _setup_toolbar(self):
         """ツールバーの設定"""
@@ -246,10 +230,21 @@ class MainWindow(QMainWindow):
     
     def _on_open_folder(self):
         """フォルダを開くダイアログを表示"""
+        # デフォルトパスの取得
+        folder_config = config.get("folders", {})
+        default_path = None
+
+        # 最後に使用したフォルダを記憶する設定の場合
+        if folder_config.get("remember_last", True) and self._recent_folders:
+            default_path = self._recent_folders[0]
+        # デフォルトフォルダパスが設定されている場合
+        elif folder_config.get("default_path"):
+            default_path = folder_config.get("default_path")
+
         folder = QFileDialog.getExistingDirectory(
             self,
-            "処理するフォルダを選択",
-            config.get("recent_folders.0", "")
+            "画像フォルダの選択",
+            default_path or ""
         )
         
         if folder:
