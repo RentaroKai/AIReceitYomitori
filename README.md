@@ -16,7 +16,7 @@ https://aistudio.google.com/prompts/new_chat
 
 ## 機能
 
-- まだ何も起きないボタンとかもある
+
 - レシート画像のインポートと管理
 - AI（Google Cloud Vision API）を使用したテキスト抽出
 - 抽出データの編集と管理
