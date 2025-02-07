@@ -1,0 +1,84 @@
+from PySide6.QtWidgets import QTableView
+from PySide6.QtCore import Qt, Signal
+
+from .image_table_model import ImageTableModel
+from .image_table_delegate import ImageTableDelegate
+
+class ImageTableView(QTableView):
+    """画像一覧用のテーブルビュー"""
+    
+    # カスタムシグナル
+    reprocess_requested = Signal(dict)  # 再処理リクエスト
+    edit_requested = Signal(dict)       # 編集リクエスト
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        
+        # モデルの設定
+        self._model = ImageTableModel()
+        self.setModel(self._model)
+        
+        # デリゲートの設定
+        self._delegate = ImageTableDelegate(self)
+        self.setItemDelegate(self._delegate)
+        
+        # シグナルの接続
+        self._delegate.reprocess_requested.connect(self.reprocess_requested)
+        self._delegate.edit_requested.connect(self.edit_requested)
+        
+        # 見た目の設定
+        self.setSelectionBehavior(QTableView.SelectRows)
+        self.setSelectionMode(QTableView.ExtendedSelection)
+        self.setAlternatingRowColors(True)
+        self.setShowGrid(True)
+        self.setSortingEnabled(True)
+        
+        # 列の設定
+        header = self.horizontalHeader()
+        header.setStretchLastSection(True)
+        header.setSectionsMovable(True)
+        
+        # 列幅の初期設定
+        self.setColumnWidth(0, 30)   # チェックボックス
+        self.setColumnWidth(1, 50)   # ステータス（文字表示）
+        self.setColumnWidth(2, 60)   # プレビュー（表示ボタン）
+        self.setColumnWidth(3, 200)  # ファイル名
+        self.setColumnWidth(4, 150)  # 店舗名
+        self.setColumnWidth(5, 100)  # 取引日
+        self.setColumnWidth(6, 100)  # 金額
+        self.setColumnWidth(7, 100)  # 処理状態
+        self.setColumnWidth(8, 120)  # 操作
+    
+    def add_image(self, image_data: dict):
+        """画像データを追加"""
+        self._model.add_image(image_data)
+    
+    def clear(self):
+        """全データをクリア"""
+        self._model.clear()
+    
+    def get_checked_items(self) -> list:
+        """チェックされた項目を取得"""
+        return self._model.get_checked_items()
+    
+    def check_all(self):
+        """全項目をチェック"""
+        self._model.check_all()
+    
+    def uncheck_all(self):
+        """全項目のチェックを解除"""
+        self._model.uncheck_all()
+    
+    def set_column_visible(self, column_id: str, visible: bool):
+        """列の表示/非表示を設定"""
+        for i, column in enumerate(self._model.COLUMNS):
+            if column["id"] == column_id:
+                self.setColumnHidden(i, not visible)
+                break
+    
+    def get_column_visible(self, column_id: str) -> bool:
+        """列の表示/非表示状態を取得"""
+        for i, column in enumerate(self._model.COLUMNS):
+            if column["id"] == column_id:
+                return not self.isColumnHidden(i)
+        return False 
