@@ -104,9 +104,23 @@ class ImageTableModel(QAbstractTableModel):
     
     def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole) -> Any:
         """ヘッダーのデータを返す"""
-        if role == Qt.DisplayRole and orientation == Qt.Horizontal:
-            return self.COLUMNS[section]["name"]
+        if orientation == Qt.Horizontal:
+            if section == 0 and role == Qt.CheckStateRole:  # チェックボックス列のヘッダー
+                all_checked = len(self._checked_rows) == len(self._data) and len(self._data) > 0
+                return Qt.Checked if all_checked else Qt.Unchecked
+            elif role == Qt.DisplayRole:
+                return self.COLUMNS[section]["name"]
         return None
+    
+    def setHeaderData(self, section: int, orientation: Qt.Orientation, value: Any, role: int = Qt.EditRole) -> bool:
+        """ヘッダーのデータを設定"""
+        if orientation == Qt.Horizontal and section == 0 and role == Qt.CheckStateRole:
+            if value == Qt.Checked:
+                self.check_all()
+            else:
+                self.uncheck_all()
+            return True
+        return False
     
     def flags(self, index: QModelIndex) -> Qt.ItemFlags:
         """セルのフラグを返す"""
@@ -118,6 +132,9 @@ class ImageTableModel(QAbstractTableModel):
         # チェックボックス列の場合
         if self.COLUMNS[index.column()]["id"] == "checkbox":
             flags |= Qt.ItemIsUserCheckable
+            # ヘッダーのチェックボックスを有効にする
+            if index.row() == -1:  # ヘッダー行
+                flags |= Qt.ItemIsUserCheckable
         
         # 編集可能なカラム
         editable_columns = ["store", "date", "amount", "tax_10", "tax_8", "tax_base_10", "tax_base_8"]

@@ -26,6 +26,10 @@ class ImageTableView(QTableView):
         self._delegate.reprocess_requested.connect(self.reprocess_requested)
         self._delegate.edit_requested.connect(self.edit_requested)
         
+        # ヘッダーのクリックイベントを処理
+        header = self.horizontalHeader()
+        header.sectionClicked.connect(self._on_header_clicked)
+        
         # 見た目の設定
         self.setSelectionBehavior(QTableView.SelectRows)
         self.setSelectionMode(QTableView.ExtendedSelection)
@@ -34,7 +38,6 @@ class ImageTableView(QTableView):
         self.setSortingEnabled(True)
         
         # 列の設定
-        header = self.horizontalHeader()
         header.setStretchLastSection(True)
         header.setSectionsMovable(True)
         
@@ -81,4 +84,13 @@ class ImageTableView(QTableView):
         for i, column in enumerate(self._model.COLUMNS):
             if column["id"] == column_id:
                 return not self.isColumnHidden(i)
-        return False 
+        return False
+
+    def _on_header_clicked(self, logical_index: int):
+        """ヘッダーがクリックされたときの処理"""
+        if logical_index == 0:  # チェックボックス列
+            # 現在の状態を取得
+            header_state = self._model.headerData(0, Qt.Horizontal, Qt.CheckStateRole)
+            # 反転した状態を設定
+            new_state = Qt.Unchecked if header_state == Qt.Checked else Qt.Checked
+            self._model.setHeaderData(0, Qt.Horizontal, new_state, Qt.CheckStateRole) 

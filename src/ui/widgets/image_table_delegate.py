@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import (
     QStyledItemDelegate, QStyleOptionViewItem,
-    QPushButton, QWidget, QHBoxLayout, QStyle
+    QPushButton, QWidget, QHBoxLayout, QStyle, QStyleOptionButton
 )
 from PySide6.QtCore import Qt, QSize, QRect, Signal, QEvent
 from PySide6.QtGui import QPainter, QIcon, QPixmap, QColor
@@ -23,7 +23,43 @@ class ImageTableDelegate(QStyledItemDelegate):
         """セルの描画"""
         column_id = index.model().COLUMNS[index.column()]["id"]
         
-        if column_id == "preview":
+        if column_id == "checkbox":
+            # チェックボックスの描画
+            option = QStyleOptionViewItem(option)
+            self.initStyleOption(option, index)
+            
+            # チェックボックスのサイズと位置を計算
+            check_rect = self.parent().style().subElementRect(
+                QStyle.SE_ItemViewItemCheckIndicator, option, self.parent()
+            )
+            
+            # チェックボックスを中央に配置
+            check_rect.moveCenter(option.rect.center())
+            
+            # チェックボックスの状態を取得
+            if index.row() == -1:  # ヘッダー行
+                state = index.model().headerData(index.column(), Qt.Horizontal, Qt.CheckStateRole)
+            else:
+                state = index.data(Qt.CheckStateRole)
+            
+            # チェックボックスを描画
+            if state is not None:
+                if state == Qt.Checked:
+                    state_flag = QStyle.State_On
+                else:
+                    state_flag = QStyle.State_Off
+                
+                check_option = QStyleOptionButton()
+                check_option.rect = check_rect
+                check_option.state = option.state | state_flag
+                self.parent().style().drawPrimitive(
+                    QStyle.PE_IndicatorItemViewItemCheck,
+                    check_option,
+                    painter,
+                    self.parent()
+                )
+            return
+        elif column_id == "preview":
             # プレビュー列はリンクスタイルで描画
             text = index.data(Qt.DisplayRole)
             if text:
