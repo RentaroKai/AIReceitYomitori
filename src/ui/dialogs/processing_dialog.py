@@ -29,6 +29,9 @@ class ProcessingDialog(BaseDialog):
         
         # キャンセルフラグ
         self._cancelled = False
+        
+        # 自動クローズフラグ
+        self._auto_close = False
     
     def _setup_ui(self):
         """UIの構築"""
@@ -65,7 +68,14 @@ class ProcessingDialog(BaseDialog):
         """キャンセルされたかどうかを返す"""
         return self._cancelled
     
+    def set_auto_close(self, auto_close: bool):
+        """自動クローズフラグを設定"""
+        self._auto_close = auto_close
+    
     def closeEvent(self, event):
         """ダイアログが閉じられるときの処理"""
+        # 自動クローズでない場合のみキャンセル処理を実行
+        if not self._auto_close:
+            self._on_cancel()
         self._animation_timer.stop()
         super().closeEvent(event) 

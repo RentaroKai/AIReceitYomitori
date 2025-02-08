@@ -83,7 +83,9 @@ class ImageProcessor:
                 except Exception as e:
                     logger.error(f"画像の処理でエラーが発生しました: {image_path}", e)
                     data_manager.update_image_status(image_path, "error", e)
-                    # エラーが発生しても処理を継続
+                    # APIエラーの場合は処理を中断
+                    if isinstance(e, RuntimeError) and str(e).startswith(("INVALID_API_KEY:", "MISSING_API_KEY:", "QUOTA_EXCEEDED:")):
+                        raise
                     continue
             
             if self._cancelled:
@@ -116,7 +118,7 @@ class ImageProcessor:
                 logger.info(f"設定からのAPIキー取得: {'成功' if api_key else '失敗'}")
             
             if not api_key:
-                logger.error("Gemini APIキーが設定されていません")
+                logger.error("Gemini APIキーが設定されていません。メニューの「ツール」→「APIキー設定」から設定を行ってください。")
                 return
             
             # Gemini APIの初期化
@@ -182,25 +184,37 @@ class ImageProcessor:
     
     def process_image(self, image_path: str) -> Dict[str, Any]:
         """画像を処理する"""
-        if not hasattr(self, '_model'):
-            raise RuntimeError("Gemini APIが初期化されていません")
-        
+        print(f"\n=== 画像処理開始: {image_path} ===")
         try:
             # 画像の前処理
-            processed_path = self._preprocess_image(image_path)
+            print("画像の前処理を開始")
+            processed_image_path = self._preprocess_image(image_path)
+            print(f"前処理完了: {processed_image_path}")
+
+            # Gemini APIで処理
+            print("Gemini APIでの処理を開始")
+            if not self._model:
+                print("Gemini APIが初期化されていません")
+                raise RuntimeError("MISSING_API_KEY:Gemini APIが初期化されていません。APIキーを設定してください。")
             
-            # Gemini APIで画像を処理
-            result = self._process_with_gemini(processed_path)
+            result = self._process_with_gemini(processed_image_path)
+            print("Gemini APIでの処理が完了")
+            print(f"処理結果: {result}")
             
-            # 処理結果を保存
-            data_manager.update_extracted_data(image_path, result)
-            
+            print("=== 画像処理成功 ===")
             return result
-        
+
         except Exception as e:
-            # エラー情報を保存
-            data_manager.update_image_status(image_path, "error", e)
-            raise
+            print(f"\n=== 画像処理エラー ===")
+            print(f"エラー内容: {str(e)}")
+            logger.error(f"画像の処理に失敗しました: {image_path}: {str(e)}")
+            
+            # APIエラーの場合はそのまま再スロー
+            if isinstance(e, RuntimeError) and str(e).startswith(("INVALID_API_KEY:", "MISSING_API_KEY:", "QUOTA_EXCEEDED:")):
+                raise
+            # その他のエラーは一般的なエラーとして扱う
+            error_message = str(e)
+            raise RuntimeError(f"PROCESSING_ERROR:{error_message}")
     
     def _preprocess_image(self, image_path: str) -> str:
         """画像の前処理を行う"""
@@ -248,18 +262,22 @@ class ImageProcessor:
     
     def _process_with_gemini(self, image_path: str) -> Dict[str, Any]:
         """Gemini APIで画像を処理する"""
+        print("\n=== Gemini API処理開始 ===")
         try:
             # 画像をアップロード
+            print(f"画像をアップロード: {image_path}")
             image = genai.upload_file(image_path, mime_type="image/jpeg")
-            logger.info(f"画像をアップロードしました: {image.display_name}")
+            print(f"アップロード成功: {image.display_name}")
             
             # チャットセッションを開始
+            print("チャットセッション開始")
             response = self._model.generate_content(
                 [image, "解析せよ"]
             )
             
             # レスポンスを解析
             if response.text:
+                print("APIレスポンスを受信")
                 # JSON文字列から余分な部分を削除
                 json_str = response.text.strip()
                 if json_str.startswith("```json"):
@@ -267,7 +285,7 @@ class ImageProcessor:
                 if json_str.endswith("```"):
                     json_str = json_str[:-3]
                 
-                logger.info(f"APIレスポンス: {json_str}")
+                print(f"APIレスポンス: {json_str}")
                 
                 # JSON文字列をディクショナリに変換
                 import json
@@ -301,14 +319,33 @@ class ImageProcessor:
                     if field not in converted_result:
                         converted_result[field] = None
                 
-                logger.info(f"変換後のデータ: {converted_result}")
+                print(f"変換後のデータ: {converted_result}")
+                print("=== Gemini API処理成功 ===")
                 return converted_result
             
+            print("APIレスポンスが空です")
             raise RuntimeError("Gemini APIからの応答が空です")
         
         except Exception as e:
-            logger.error("Gemini APIでの処理に失敗しました", e)
-            raise
+            print(f"Gemini APIエラー: {str(e)}")
+            error_message = str(e)
+            error_type = "API_ERROR"
+            if "API_KEY_INVALID" in error_message:
+                error_type = "INVALID_API_KEY"
+                error_message = "APIキーが無効です。メニューの「ツール」→「APIキー設定」から正しいAPIキーを設定してください。"
+            elif "API key not found" in error_message:
+                error_type = "MISSING_API_KEY"
+                error_message = "APIキーが設定されていません。メニューの「ツール」→「APIキー設定」からAPIキーを設定してください。"
+            elif "quota exceeded" in error_message.lower():
+                error_type = "QUOTA_EXCEEDED"
+                error_message = "APIの利用制限に達しました。しばらく時間をおいてから再度お試しください。"
+            
+            print(f"エラータイプ: {error_type}")
+            print(f"エラーメッセージ: {error_message}")
+            print("=== Gemini API処理失敗 ===")
+            
+            logger.error(f"Gemini APIでの処理に失敗しました: {error_message}")
+            raise RuntimeError(f"{error_type}:{error_message}")
 
 # シングルトンインスタンス
 image_processor = ImageProcessor() 

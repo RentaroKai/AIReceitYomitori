@@ -21,30 +21,58 @@ class ImageProcessThread(QThread):
     # シグナル定義
     progress = Signal(int, int)  # 進捗状況（現在の処理数、合計数）
     error = Signal(str, str)  # エラー（画像パス、エラーメッセージ）
+    api_error = Signal(str)  # APIエラー（エラーメッセージ）
     finished = Signal()  # 完了
     
-    def __init__(self, images: list):
-        super().__init__()
-        self._images = images
+    def __init__(self, parent=None):
+        super().__init__(parent)
         self._is_cancelled = False
     
     def run(self):
         """処理を実行"""
+        print("\n=== 処理スレッド開始 ===")
         try:
             # バッチ処理を実行
-            if image_processor.process_queue():
-                while image_processor.is_processing():
-                    current, total = image_processor.get_progress()
-                    self.progress.emit(current, total)
-                    self.msleep(100)  # 進捗更新の間隔
-            else:
+            print("バッチ処理を開始します")
+            if not image_processor.process_queue():
+                print("処理を開始できませんでした")
                 self.error.emit("", "処理を開始できませんでした")
+                return
             
-            self.finished.emit()
+            # 処理の進捗を監視
+            while image_processor.is_processing():
+                current, total = image_processor.get_progress()
+                self.progress.emit(current, total)
+                print(f"処理進捗: {current}/{total}")
+                self.msleep(100)  # 進捗更新の間隔
         
         except Exception as e:
-            logger.error("画像処理スレッドでエラーが発生しました", e)
-            self.error.emit("", str(e))
+            print(f"エラーが発生しました: {str(e)}")
+            logger.error("画像処理スレッドでエラーが発生しました", str(e))
+            error_message = str(e)
+            
+            # エラーメッセージを解析
+            if ":" in error_message:
+                error_type, message = error_message.split(":", 1)
+                message = message.strip()
+                
+                # APIエラーの場合
+                if error_type in ["INVALID_API_KEY", "MISSING_API_KEY", "QUOTA_EXCEEDED"]:
+                    print(f"APIエラーを検出: {error_type}")
+                    print(f"エラーメッセージ: {message}")
+                    self.api_error.emit(message)
+                # その他のエラーの場合
+                else:
+                    print(f"一般エラーを検出: {error_type}")
+                    self.error.emit("", message)
+            # エラータイプが不明な場合
+            else:
+                print("未分類のエラーを検出")
+                self.error.emit("", error_message)
+        
+        finally:
+            print("=== 処理スレッド終了 ===")
+            self.finished.emit()
     
     def cancel(self):
         """処理をキャンセル"""
@@ -209,11 +237,13 @@ class MainWindow(QMainWindow):
         
         # 処理実行
         process_action = QAction("読み取り処理実行", self)
+        process_action.setObjectName("process_action")  # オブジェクト名を設定
         process_action.triggered.connect(self._on_process_selected)
         toolbar.addAction(process_action)
         
         # リネーム実行
         rename_action = QAction("リネーム", self)
+        rename_action.setObjectName("rename_action")  # オブジェクト名を設定
         rename_action.triggered.connect(self._on_rename_selected)
         toolbar.addAction(rename_action)
         
@@ -311,12 +341,13 @@ class MainWindow(QMainWindow):
             return
         
         # 処理中ダイアログの作成
-        progress = ProcessingDialog(self)
+        self._progress_dialog = ProcessingDialog(self)
         
         # 処理スレッドの作成と開始
-        self._process_thread = ImageProcessThread(items)
+        self._process_thread = ImageProcessThread(self)
         self._process_thread.error.connect(self._on_process_error)
-        self._process_thread.finished.connect(lambda: self._on_process_finished(progress))
+        self._process_thread.api_error.connect(self._on_api_error)
+        self._process_thread.finished.connect(self._on_process_finished)
         
         # 処理キューに追加
         image_paths = [item["file_info"]["path"] for item in items]
@@ -324,21 +355,28 @@ class MainWindow(QMainWindow):
         
         # 処理開始
         self._process_thread.start()
-        progress.show()
+        self._progress_dialog.show()
         
         logger.info(f"{len(items)}個の項目の処理を開始します")
     
     def _on_process_error(self, image_path: str, error_message: str):
         """処理エラーの処理"""
-        logger.error(f"画像の処理でエラーが発生しました: {image_path}", error_message)
+        logger.error(f"画像の処理でエラーが発生しました: {image_path}: {error_message}")
         self.statusBar().showMessage(f"エラー: {error_message}")
     
-    def _on_process_finished(self, progress: ProcessingDialog):
+    def _on_process_finished(self):
         """処理完了の処理"""
-        progress.close()
+        # 処理ダイアログを自動クローズに設定して閉じる
+        if hasattr(self, '_progress_dialog') and self._progress_dialog:
+            self._progress_dialog.set_auto_close(True)
+            self._progress_dialog.close()
         
         if self._process_thread and not self._process_thread._is_cancelled:
             self.statusBar().showMessage("処理が完了しました")
+        
+        # スレッドの終了を待機
+        if self._process_thread:
+            self._process_thread.wait()
         
         # テーブルビューの更新
         self.table_view.viewport().update()
@@ -389,11 +427,15 @@ class MainWindow(QMainWindow):
         
         except Exception as e:
             logger.error("再処理に失敗しました", e)
-            QMessageBox.critical(
-                self,
-                "エラー",
-                f"再処理に失敗しました：\n{str(e)}"
-            )
+            error_message = str(e)
+            if ":" in error_message:
+                error_type, message = error_message.split(":", 1)
+                if error_type in ["INVALID_API_KEY", "MISSING_API_KEY", "QUOTA_EXCEEDED"]:
+                    QMessageBox.warning(self, "APIエラー", message)
+                else:
+                    QMessageBox.critical(self, "エラー", f"再処理に失敗しました：\n{message}")
+            else:
+                QMessageBox.critical(self, "エラー", f"再処理に失敗しました：\n{error_message}")
     
     def _on_edit_requested(self, item: dict):
         """編集リクエスト"""
@@ -541,12 +583,13 @@ class MainWindow(QMainWindow):
             # ライトテーマ（デフォルト）
             self.setStyleSheet("") 
 
-    def _on_process_cancelled(self, progress: ProcessingDialog):
-        """処理キャンセルの処理"""
-        if self._process_thread:
-            self._process_thread.cancel()
-            self.statusBar().showMessage("処理をキャンセルしました")
-            progress.close()
-            
-            # テーブルビューの更新
-            self.table_view.viewport().update() 
+    def _on_api_error(self, error_message: str):
+        """APIエラーの処理"""
+        logger.error(f"APIエラーが発生しました: {error_message}")
+        # 処理ダイアログを自動クローズに設定して閉じる
+        if hasattr(self, '_progress_dialog') and self._progress_dialog:
+            self._progress_dialog.set_auto_close(True)
+            self._progress_dialog.close()
+        # エラーダイアログを表示
+        QMessageBox.warning(self, "APIエラー", error_message)
+        self.statusBar().showMessage(f"APIエラー: {error_message}") 
