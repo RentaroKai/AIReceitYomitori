@@ -40,11 +40,19 @@ class ImageProcessThread(QThread):
                 return
             
             # 処理の進捗を監視
-            while image_processor.is_processing():
+            while image_processor.is_processing() and not self._is_cancelled:
+                if self._is_cancelled:
+                    print("処理がキャンセルされました")
+                    break
+                
                 current, total = image_processor.get_progress()
                 self.progress.emit(current, total)
                 print(f"処理進捗: {current}/{total}")
                 self.msleep(100)  # 進捗更新の間隔
+            
+            if self._is_cancelled:
+                print("処理が中断されました")
+                image_processor.clear_queue()
         
         except Exception as e:
             print(f"エラーが発生しました: {str(e)}")
@@ -76,6 +84,7 @@ class ImageProcessThread(QThread):
     
     def cancel(self):
         """処理をキャンセル"""
+        print("キャンセルが要求されました")
         self._is_cancelled = True
         image_processor.clear_queue()
 
@@ -328,37 +337,39 @@ class MainWindow(QMainWindow):
         self._update_recent_menu()
     
     def _on_process_selected(self):
-        """選択項目の処理"""
-        items = self.table_view.get_checked_items()
-        if not items:
-            self.statusBar().showMessage("処理する項目が選択されていません")
+        """選択された画像の処理を実行"""
+        # 選択された画像を取得
+        selected_items = self.table_view.get_checked_items()
+        if not selected_items:
+            QMessageBox.warning(self, "警告", "処理する画像が選択されていません。")
             return
-        
+
         # 処理中なら中断
         if image_processor.is_processing():
             image_processor.clear_queue()
             self.statusBar().showMessage("処理をキャンセルしました")
             return
-        
-        # 処理中ダイアログの作成
+
+        # 処理ダイアログを表示
         self._progress_dialog = ProcessingDialog(self)
-        
-        # 処理スレッドの作成と開始
+        self._progress_dialog.cancelled.connect(self._on_process_cancelled)
+
+        # 処理スレッドの設定
         self._process_thread = ImageProcessThread(self)
+        self._process_thread.progress.connect(lambda current, total: print(f"Progress: {current}/{total}"))
         self._process_thread.error.connect(self._on_process_error)
         self._process_thread.api_error.connect(self._on_api_error)
         self._process_thread.finished.connect(self._on_process_finished)
-        
+        self._process_thread.finished.connect(self._progress_dialog.accept)
+
         # 処理キューに追加
-        image_paths = [item["file_info"]["path"] for item in items]
+        image_paths = [item["file_info"]["path"] for item in selected_items]
         image_processor.add_to_queue(image_paths)
-        
-        # 処理開始
+
+        # 処理を開始
         self._process_thread.start()
-        self._progress_dialog.show()
-        
-        logger.info(f"{len(items)}個の項目の処理を開始します")
-    
+        self._progress_dialog.exec()
+
     def _on_process_error(self, image_path: str, error_message: str):
         """処理エラーの処理"""
         logger.error(f"画像の処理でエラーが発生しました: {image_path}: {error_message}")
@@ -592,4 +603,10 @@ class MainWindow(QMainWindow):
             self._progress_dialog.close()
         # エラーダイアログを表示
         QMessageBox.warning(self, "APIエラー", error_message)
-        self.statusBar().showMessage(f"APIエラー: {error_message}") 
+        self.statusBar().showMessage(f"APIエラー: {error_message}")
+
+    def _on_process_cancelled(self):
+        """処理がキャンセルされた時の処理"""
+        if self._process_thread and self._process_thread.isRunning():
+            print("処理をキャンセルします...")
+            self._process_thread.cancel() 
