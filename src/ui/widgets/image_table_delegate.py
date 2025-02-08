@@ -111,6 +111,17 @@ class ImageTableDelegate(QStyledItemDelegate):
         
         return super().createEditor(parent, option, index)
     
+    def setEditorData(self, editor: QWidget, index):
+        """エディターに現在の値を設定"""
+        column_id = index.model().COLUMNS[index.column()]["id"]
+        
+        if column_id not in ["preview", "actions", "checkbox"]:
+            value = index.data(Qt.DisplayRole)
+            if value is not None:
+                editor.setText(str(value))
+        else:
+            super().setEditorData(editor, index)
+    
     def _create_preview_button(self, parent: QWidget, index) -> QWidget:
         """プレビューボタンの作成"""
         widget = QWidget(parent)
