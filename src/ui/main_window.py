@@ -10,6 +10,7 @@ from pathlib import Path
 
 from src.ui.widgets import ImageTableView
 from src.ui.dialogs import APIKeyDialog, SettingsDialog, EditDialog, ManualDialog
+from src.ui.dialogs.processing_dialog import ProcessingDialog
 from src.core import data_manager, image_processor
 from src.utils import config, logger
 from .dialogs.log_viewer_dialog import LogViewerDialog
@@ -315,27 +316,22 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage("処理をキャンセルしました")
             return
         
-        # 進捗ダイアログの作成
-        progress = QProgressDialog("画像を処理しています...", "キャンセル", 0, len(items), self)
-        progress.setWindowModality(Qt.WindowModal)
-        progress.setAutoClose(False)
-        progress.setAutoReset(False)
+        # 処理中ダイアログの作成
+        progress = ProcessingDialog(self)
         
         # 処理スレッドの作成と開始
         self._process_thread = ImageProcessThread(items)
-        self._process_thread.progress.connect(
-            lambda current, total: progress.setValue(current)
-        )
         self._process_thread.error.connect(self._on_process_error)
         self._process_thread.finished.connect(lambda: self._on_process_finished(progress))
-        progress.canceled.connect(self._process_thread.cancel)
         
         # 処理キューに追加
         image_paths = [item["file_info"]["path"] for item in items]
         image_processor.add_to_queue(image_paths)
         
+        # 処理開始
         self._process_thread.start()
         self.cancel_action.setEnabled(True)
+        progress.show()
         
         logger.info(f"{len(items)}個の項目の処理を開始します")
     
@@ -344,7 +340,7 @@ class MainWindow(QMainWindow):
         logger.error(f"画像の処理でエラーが発生しました: {image_path}", error_message)
         self.statusBar().showMessage(f"エラー: {error_message}")
     
-    def _on_process_finished(self, progress: QProgressDialog):
+    def _on_process_finished(self, progress: ProcessingDialog):
         """処理完了の処理"""
         self.cancel_action.setEnabled(False)
         progress.close()

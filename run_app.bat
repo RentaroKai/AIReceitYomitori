@@ -2,7 +2,7 @@
 
 cd /d %~dp0
 
-echo アプリケーションを起動しています...
+echo starting app...
 python src/main.py
 
 pause 
