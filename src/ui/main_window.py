@@ -319,6 +319,9 @@ class MainWindow(QMainWindow):
         # 処理中ダイアログの作成
         progress = ProcessingDialog(self)
         
+        # キャンセル処理の設定
+        progress.cancelled.connect(lambda: self._on_process_cancelled(progress))
+        
         # 処理スレッドの作成と開始
         self._process_thread = ImageProcessThread(items)
         self._process_thread.error.connect(self._on_process_error)
@@ -548,3 +551,13 @@ class MainWindow(QMainWindow):
         else:
             # ライトテーマ（デフォルト）
             self.setStyleSheet("") 
+
+    def _on_process_cancelled(self, progress: ProcessingDialog):
+        """処理キャンセルの処理"""
+        if self._process_thread:
+            self._process_thread.cancel()
+            self.statusBar().showMessage("処理をキャンセルしました")
+            progress.close()
+            
+            # テーブルビューの更新
+            self.table_view.viewport().update() 

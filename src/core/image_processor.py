@@ -17,15 +17,18 @@ class ImageProcessor:
         self._is_processing = False
         self._current_progress = 0
         self._total_items = 0
+        self._cancelled = False
     
     def add_to_queue(self, image_paths: list):
         """処理キューに画像を追加"""
         self._processing_queue.extend(image_paths)
+        self._cancelled = False  # キャンセルフラグをリセット
         logger.info(f"{len(image_paths)}個の画像を処理キューに追加しました")
     
     def clear_queue(self):
         """処理キューをクリア"""
         self._processing_queue.clear()
+        self._cancelled = True  # キャンセルフラグを設定
         logger.info("処理キューをクリアしました")
     
     def is_processing(self) -> bool:
@@ -54,6 +57,11 @@ class ImageProcessor:
             logger.info(f"バッチ処理を開始します: 合計{self._total_items}個の画像")
             
             for image_path in self._processing_queue[:]:
+                # キャンセルされた場合は処理を中断
+                if self._cancelled:
+                    logger.info("処理がキャンセルされました")
+                    break
+                
                 try:
                     # 処理状態を更新
                     data_manager.update_image_status(image_path, "processing")
@@ -78,7 +86,10 @@ class ImageProcessor:
                     # エラーが発生しても処理を継続
                     continue
             
-            logger.info("バッチ処理が完了しました")
+            if self._cancelled:
+                logger.info("バッチ処理がキャンセルされました")
+            else:
+                logger.info("バッチ処理が完了しました")
             return True
         
         finally:
@@ -86,6 +97,7 @@ class ImageProcessor:
             self._processing_queue.clear()
             self._current_progress = 0
             self._total_items = 0
+            self._cancelled = False
     
     def get_progress(self) -> tuple:
         """現在の進捗状況を取得"""
