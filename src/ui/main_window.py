@@ -212,11 +212,6 @@ class MainWindow(QMainWindow):
         process_action.triggered.connect(self._on_process_selected)
         toolbar.addAction(process_action)
         
-        # 処理キャンセル
-        self.cancel_action = QAction("キャンセル", self)
-        self.cancel_action.setEnabled(False)
-        toolbar.addAction(self.cancel_action)
-        
         # リネーム実行
         rename_action = QAction("リネーム", self)
         rename_action.triggered.connect(self._on_rename_selected)
@@ -312,15 +307,11 @@ class MainWindow(QMainWindow):
         # 処理中なら中断
         if image_processor.is_processing():
             image_processor.clear_queue()
-            self.cancel_action.setEnabled(False)
             self.statusBar().showMessage("処理をキャンセルしました")
             return
         
         # 処理中ダイアログの作成
         progress = ProcessingDialog(self)
-        
-        # キャンセル処理の設定
-        progress.cancelled.connect(lambda: self._on_process_cancelled(progress))
         
         # 処理スレッドの作成と開始
         self._process_thread = ImageProcessThread(items)
@@ -333,7 +324,6 @@ class MainWindow(QMainWindow):
         
         # 処理開始
         self._process_thread.start()
-        self.cancel_action.setEnabled(True)
         progress.show()
         
         logger.info(f"{len(items)}個の項目の処理を開始します")
@@ -345,7 +335,6 @@ class MainWindow(QMainWindow):
     
     def _on_process_finished(self, progress: ProcessingDialog):
         """処理完了の処理"""
-        self.cancel_action.setEnabled(False)
         progress.close()
         
         if self._process_thread and not self._process_thread._is_cancelled:
