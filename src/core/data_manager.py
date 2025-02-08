@@ -96,12 +96,12 @@ class DataManager:
             return
         
         try:
-            # バックアップディレクトリの作成
-            backup_dir = Path(config.get("backup.directory"))
+            # バックアップディレクトリの作成（ワークスペースと同じフォルダ内に.backupディレクトリを作成）
+            backup_dir = self._current_folder / ".backup"
             backup_dir.mkdir(parents=True, exist_ok=True)
             
             # バックアップファイル名の生成
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
             backup_file = backup_dir / f"workspace_{timestamp}.json"
             
             # バックアップの作成
@@ -115,26 +115,21 @@ class DataManager:
             logger.error("バックアップの作成に失敗しました", e)
     
     def _cleanup_old_backups(self):
-        """古いバックアップを削除"""
+        """古いバックアップを削除する"""
         try:
-            backup_dir = Path(config.get("backup.directory"))
-            if not backup_dir.exists():
+            if not self._current_folder:
                 return
+                
+            # 現在のフォルダ内の.backupディレクトリを検索
+            backup_dir = self._current_folder / ".backup"
+            if backup_dir.exists():
+                # 画像バックアップのクリーンアップ
+                self._cleanup_directory_backups(backup_dir, "*.*")
+                # ワークスペースバックアップのクリーンアップ
+                self._cleanup_directory_backups(backup_dir, "workspace_*.json")
             
-            # バックアップファイルの一覧を取得
-            backups = sorted(
-                backup_dir.glob("workspace_*.json"),
-                key=lambda x: x.stat().st_mtime,
-                reverse=True
-            )
-            
-            # 設定された世代数を超えるバックアップを削除
-            max_generations = config.get("backup.generations", 3)
-            for backup in backups[max_generations:]:
-                backup.unlink()
-                logger.debug(f"古いバックアップを削除しました: {backup}")
         except Exception as e:
-            logger.error("古いバックアップの削除に失敗しました", e)
+            logger.error(f"バックアップのクリーンアップに失敗しました: {e}")
     
     def _load_images(self) -> List[dict]:
         """画像ファイルの読み込み"""
@@ -344,6 +339,12 @@ class DataManager:
             # 重複チェックと解決
             new_path = self._resolve_filename_conflict(new_path)
 
+            # バックアップの作成
+            backup_path = self._backup_image(old_path)
+            if not backup_path:
+                logger.warning("バックアップの作成に失敗したため、リネームを中止します")
+                return False
+
             # ワークスペースのJSONを更新
             old_relative_path = str(old_path.relative_to(self._current_folder))
             new_relative_path = str(new_path.relative_to(self._current_folder))
@@ -356,6 +357,9 @@ class DataManager:
 
             # リネーム実行
             old_path.rename(new_path)
+
+            # 古いバックアップのクリーンアップ
+            self._cleanup_old_backups()
 
             # image_infoの更新（UIの表示用）
             image_info["file_info"]["path"] = str(new_path)
@@ -408,6 +412,52 @@ class DataManager:
             if not new_path.exists():
                 return new_path
             counter += 1
+
+    def _backup_image(self, image_path: Path) -> Optional[Path]:
+        """画像ファイルのバックアップを作成する
+        
+        Args:
+            image_path (Path): バックアップする画像のパス
+        
+        Returns:
+            Optional[Path]: バックアップファイルのパス。失敗した場合はNone
+        """
+        try:
+            # バックアップディレクトリの作成（画像と同じフォルダ内に.backupディレクトリを作成）
+            backup_dir = image_path.parent / ".backup"
+            backup_dir.mkdir(parents=True, exist_ok=True)
+            
+            # バックアップファイル名の生成
+            timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+            backup_path = backup_dir / f"{timestamp}_{image_path.name}"
+            
+            # ファイルのコピー
+            shutil.copy2(image_path, backup_path)
+            logger.info(f"画像のバックアップを作成しました: {backup_path}")
+            
+            return backup_path
+        
+        except Exception as e:
+            logger.error(f"画像のバックアップ作成に失敗しました: {e}")
+            return None
+
+    def _cleanup_directory_backups(self, directory: Path, pattern: str):
+        """指定ディレクトリの古いバックアップを削除する"""
+        if not directory.exists():
+            return
+            
+        # バックアップファイルの一覧を取得
+        backups = sorted(
+            directory.glob(pattern),
+            key=lambda x: x.stat().st_mtime,
+            reverse=True
+        )
+        
+        # 設定された世代数を超えるバックアップを削除
+        max_generations = config.get("backup.generations", 3)
+        for backup in backups[max_generations:]:
+            backup.unlink()
+            logger.debug(f"古いバックアップを削除しました: {backup}")
 
 # シングルトンインスタンス
 data_manager = DataManager() 
