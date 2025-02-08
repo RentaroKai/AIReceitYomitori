@@ -10,8 +10,7 @@ https://aistudio.google.com/prompts/new_chat
 
 ## 注意
 
-バックアップ機能まだ入れてないのでバックアップとってから実行したほうが良いです。GeminiAPIキーは無料だとGoogleが中身見れます。
-
+GeminiAPIキーは無料だとGoogleが中身見ます。
 
 
 ## 機能
