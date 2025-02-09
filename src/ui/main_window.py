@@ -195,7 +195,7 @@ class MainWindow(QMainWindow):
         # 列の表示/非表示
         columns_menu = view_menu.addMenu("列の表示/非表示")
         for column in self.table_view._model.COLUMNS:
-            if column["id"] not in ["checkbox", "actions"]:
+            if column["id"] not in ["checkbox", "actions", "process_status"]:
                 action = QAction(column["name"], self)
                 action.setCheckable(True)
                 action.setChecked(True)

@@ -48,7 +48,7 @@ class ImageTableView(QTableView):
         self.setColumnWidth(3, 200)  # ファイル名
         self.setColumnWidth(4, 150)  # 店舗名
         self.setColumnWidth(5, 100)  # 取引日
-        self.setColumnWidth(6, 100)  # 金額
+        self.setColumnWidth(6, 100)
         self.setColumnWidth(7, 100)  # 10%消費税額
         self.setColumnWidth(8, 100)  # 8%消費税額
         self.setColumnWidth(9, 100)  # 10%対象額
@@ -56,6 +56,11 @@ class ImageTableView(QTableView):
         self.setColumnWidth(11, 150) # 商品名
         self.setColumnWidth(12, 100) # 処理状態
         self.setColumnWidth(13, 120) # 操作
+
+        # 処理状態列を非表示に設定
+        self.set_column_visible("process_status", False)
+        # 操作列を非表示に設定
+        self.set_column_visible("actions", False)
     
     def add_image(self, image_data: dict):
         """画像データを追加"""
