@@ -155,6 +155,9 @@ class ImageProcessor:
                         ),
                         "The amount subject to 8% tax": content.Schema(
                             type=content.Type.INTEGER,
+                        ),
+                        "Representative Item Name": content.Schema(
+                            type=content.Type.STRING,
                         )
                     },
                 ),
@@ -174,6 +177,7 @@ class ImageProcessor:
                 "- Store name\n"
                 "- Total amount (currency symbols removed)\n"
                 "- tax rate /tax amount/tax base\n"
+                "- Representative item name (one of the most expensive or notable items)\n"
                 "Output in JSON format."
             )
             

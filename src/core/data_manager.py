@@ -64,7 +64,8 @@ class DataManager:
                         "The amount of consumption tax at the rate of 10%",
                         "The amount of consumption tax at the rate of 8%",
                         "The amount subject to 10% tax",
-                        "The amount subject to 8% tax"
+                        "The amount subject to 8% tax",
+                        "Representative Item Name"
                     ]
                 }
             },
@@ -197,7 +198,8 @@ class DataManager:
                 "The amount of consumption tax at the rate of 10%": None,
                 "The amount of consumption tax at the rate of 8%": None,
                 "The amount subject to 10% tax": None,
-                "The amount subject to 8% tax": None
+                "The amount subject to 8% tax": None,
+                "Representative Item Name": None
             },
             "validation": {
                 "is_valid": False,

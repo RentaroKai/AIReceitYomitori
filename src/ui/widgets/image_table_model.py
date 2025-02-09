@@ -19,6 +19,7 @@ class ImageTableModel(QAbstractTableModel):
         {"id": "tax_8", "name": "8%消費税額", "type": Qt.DisplayRole},
         {"id": "tax_base_10", "name": "10%対象額", "type": Qt.DisplayRole},
         {"id": "tax_base_8", "name": "8%対象額", "type": Qt.DisplayRole},
+        {"id": "item_name", "name": "商品名", "type": Qt.DisplayRole},
         {"id": "process_status", "name": "処理状態", "type": Qt.DisplayRole},
         {"id": "actions", "name": "操作", "type": Qt.UserRole}
     ]
@@ -62,8 +63,10 @@ class ImageTableModel(QAbstractTableModel):
         if role == Qt.DisplayRole:
             if column["id"] == "status":
                 # ステータスの文字列を返す
-                status = self._data[row].get("processing_status", {}).get("status", "pending")
-                return self.STATUS_DISPLAY.get(status, "不明")
+                status = self._data[row].get("processing_status", {})
+                if status.get("error_type"):
+                    return f"エラー: {status.get('error_details', '')}"
+                return status.get("status", "pending")
             elif column["id"] == "preview":
                 # プレビュー列にはファイル名を表示
                 file_info = self._data[row].get("file_info", {})
@@ -90,6 +93,8 @@ class ImageTableModel(QAbstractTableModel):
                     return extracted_data.get("Store Name", "")
                 elif column["id"] == "date":
                     return extracted_data.get("Transaction Date (yyyy/mm/dd only)", "")
+                elif column["id"] == "item_name":
+                    return extracted_data.get("Representative Item Name", "")
                 elif column["id"] == "filename":
                     file_path = self._data[row].get("file_info", {}).get("path", "")
                     return os.path.basename(file_path)
@@ -137,7 +142,7 @@ class ImageTableModel(QAbstractTableModel):
                 flags |= Qt.ItemIsUserCheckable
         
         # 編集可能なカラム
-        editable_columns = ["store", "date", "amount", "tax_10", "tax_8", "tax_base_10", "tax_base_8"]
+        editable_columns = ["store", "date", "amount", "tax_10", "tax_8", "tax_base_10", "tax_base_8", "item_name"]
         if self.COLUMNS[index.column()]["id"] in editable_columns:
             flags |= Qt.ItemIsEditable
         
@@ -175,6 +180,8 @@ class ImageTableModel(QAbstractTableModel):
                 self._data[row]["extracted_data"]["Store Name"] = str(value)
             elif column_id == "date":
                 self._data[row]["extracted_data"]["Transaction Date (yyyy/mm/dd only)"] = str(value)
+            elif column_id == "item_name":
+                self._data[row]["extracted_data"]["Representative Item Name"] = str(value)
             elif column_id == "amount":
                 try:
                     amount = int(str(value).replace("¥", "").replace(",", ""))

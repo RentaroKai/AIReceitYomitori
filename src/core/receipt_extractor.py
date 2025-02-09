@@ -51,6 +51,9 @@ def main():
                 "tax rate": content.Schema(
                     type=content.Type.INTEGER,
                 ),
+                "Representative Item Name": content.Schema(
+                    type=content.Type.STRING,
+                ),
             },
         ),
         "response_mime_type": "application/json",
@@ -68,6 +71,7 @@ def main():
             "- 税額対象金額\n"
             "- 税率\n"
             "- 税額\n"
+            "- 代表的な商品名（最も高額な商品や特徴的な商品を1つ）\n"
             "出力は JSON 形式でお願いします。"
         ),
     )

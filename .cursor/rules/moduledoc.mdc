@@ -1,0 +1,6 @@
+---
+description: One-line Documentation Rule
+globs: 
+---
+各ファイル（.py）の1行目に、そのファイルの目的を要約する一行のみのコメント（docstring）を記述してください。
+
