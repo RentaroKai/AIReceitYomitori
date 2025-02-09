@@ -3,6 +3,7 @@ from PySide6.QtCore import Qt, Signal
 
 from .image_table_model import ImageTableModel
 from .image_table_delegate import ImageTableDelegate
+from .custom_header_view import CustomHeaderView
 
 class ImageTableView(QTableView):
     """画像一覧用のテーブルビュー"""
@@ -22,13 +23,14 @@ class ImageTableView(QTableView):
         self._delegate = ImageTableDelegate(self)
         self.setItemDelegate(self._delegate)
         
+        # カスタムヘッダービューの設定
+        self._header = CustomHeaderView(Qt.Horizontal, self)
+        self.setHorizontalHeader(self._header)
+        self._header.sectionClicked.connect(self._on_header_clicked)
+        
         # シグナルの接続
         self._delegate.reprocess_requested.connect(self.reprocess_requested)
         self._delegate.edit_requested.connect(self.edit_requested)
-        
-        # ヘッダーのクリックイベントを処理
-        header = self.horizontalHeader()
-        header.sectionClicked.connect(self._on_header_clicked)
         
         # 見た目の設定
         self.setSelectionBehavior(QTableView.SelectRows)
@@ -38,8 +40,8 @@ class ImageTableView(QTableView):
         self.setSortingEnabled(True)
         
         # 列の設定
-        header.setStretchLastSection(True)
-        header.setSectionsMovable(True)
+        self._header.setStretchLastSection(True)
+        self._header.setSectionsMovable(True)
         
         # 列幅の初期設定
         self.setColumnWidth(0, 30)   # チェックボックス
