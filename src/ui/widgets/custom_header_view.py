@@ -1,3 +1,5 @@
+"""テーブルヘッダーのカスタマイズを行うモジュール。チェックボックスやソート機能を含むヘッダーを実装。"""
+
 from PySide6.QtWidgets import QHeaderView, QStyleOptionButton, QStyle
 from PySide6.QtCore import Qt, QRect
 from PySide6.QtGui import QPainter

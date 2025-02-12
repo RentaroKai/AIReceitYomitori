@@ -3,6 +3,8 @@ import os
 import google.generativeai as genai
 from google.ai.generativelanguage_v1beta.types import content
 
+"""レシート画像からテキスト情報を抽出し、構造化データに変換するモジュール。Gemini Vision APIを使用。"""
+
 # 既存の gemini.py のアップロード関数に類似した関数を利用しています。
 def upload_to_gemini(path, mime_type=None):
     """

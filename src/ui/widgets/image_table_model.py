@@ -1,3 +1,5 @@
+"""画像一覧のデータモデルを実装するモジュール。画像データの管理、表示形式、ソート機能を提供。"""
+
 from typing import Any, List, Optional
 from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex
 from PySide6.QtGui import QIcon

@@ -1,3 +1,5 @@
+"""画像一覧を表示するテーブルビューウィジェット。画像の選択、チェック、ソート機能を提供。"""
+
 from PySide6.QtWidgets import QTableView
 from PySide6.QtCore import Qt, Signal
 

@@ -1,3 +1,5 @@
+"""画像一覧の表示カスタマイズを行うデリゲートモジュール。プレビュー、ボタン、アイコンなどの特殊な表示要素を実装。"""
+
 from PySide6.QtWidgets import (
     QStyledItemDelegate, QStyleOptionViewItem,
     QPushButton, QWidget, QHBoxLayout, QStyle, QStyleOptionButton

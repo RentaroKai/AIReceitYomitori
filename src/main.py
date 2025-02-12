@@ -1,3 +1,5 @@
+"""アプリケーションのエントリーポイント。GUIアプリケーションの起動と初期設定を行う。"""
+
 import sys
 import os
 from pathlib import Path

@@ -1,3 +1,5 @@
+"""画像処理とGemini APIを使用したレシート情報抽出の中核となるモジュール。画像のキューイング、前処理、API通信を管理。"""
+
 import os
 from pathlib import Path
 from typing import Optional, Dict, Any

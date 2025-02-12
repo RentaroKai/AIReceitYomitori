@@ -1,3 +1,5 @@
+"""Gemini APIで使用する画像処理の共通機能を提供するモジュール。画像の前処理と情報抽出の基本機能を実装。"""
+
 import json
 from PIL import Image
 from io import BytesIO

@@ -1,3 +1,5 @@
+"""アプリケーションのメインウィンドウを実装するモジュール。UIの中心的な制御とユーザーインタラクションを管理。"""
+
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QMenuBar, QStatusBar,
     QToolBar, QFileDialog, QMessageBox, QProgressDialog

@@ -1,6 +1,8 @@
 ---
-description: One-line Documentation Rule
-globs: 
+description: 1行目の説明
+globs: *.py
 ---
-各ファイル（.py）の1行目に、そのファイルの目的を要約する一行のみのコメント（docstring）を記述してください。
+# Your rule content
+
+各ファイル（.py）の1行目に、そのファイルの目的を要約する一行のみのコメント（docstring）を英語で記述してください。
 
