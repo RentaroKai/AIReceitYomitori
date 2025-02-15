@@ -237,9 +237,8 @@ class MainWindow(QMainWindow):
         self.addToolBar(toolbar)
         
         # 現在の画像フォルダを開く
-        open_folder_action = QAction("フォルダを開く", self)
-        open_folder_action.setIcon(QIcon.fromTheme("folder-open", QIcon(":/icons/folder")))  # システムアイコンを使用
-        open_folder_action.setText("📁 フォルダを開く")
+        open_folder_action = QAction("📁", self)
+        open_folder_action.setObjectName("folder_action")  # オブジェクト名を設定
         open_folder_action.setToolTip("現在選択中の画像があるフォルダを開く")
         open_folder_action.triggered.connect(self._open_current_image_folder)
         toolbar.addAction(open_folder_action)
@@ -257,6 +256,55 @@ class MainWindow(QMainWindow):
         rename_action.setObjectName("rename_action")  # オブジェクト名を設定
         rename_action.triggered.connect(self._on_rename_selected)
         toolbar.addAction(rename_action)
+
+        # ボタンのスタイル設定
+        toolbar.setStyleSheet("""
+            QToolButton {
+                background-color: #3A5A40;
+                color: white;
+                border: 1px solid #344E41;
+                border-radius: 4px;
+                padding: 4px 8px;
+                margin: 2px;
+                min-height: 16px;
+                max-height: 16px;
+            }
+            QToolButton:hover {
+                background-color: #344E41;
+                border-color: #2C4A3E;
+            }
+            QToolButton:pressed {
+                background-color: #2C4A3E;
+                border-color: #243832;
+            }
+            QToolButton#folder_action {
+                font-size: 14px;
+                min-width: 16px;
+                max-width: 16px;
+            }
+            QToolButton#process_action {
+                background-color: #3A5A40;
+                color: white;
+                border-color: #344E41;
+            }
+            QToolButton#process_action:hover {
+                background-color: #344E41;
+            }
+            QToolButton#process_action:pressed {
+                background-color: #2C4A3E;
+            }
+            QToolButton#rename_action {
+                background-color: #3A5A40;
+                color: white;
+                border-color: #344E41;
+            }
+            QToolButton#rename_action:hover {
+                background-color: #344E41;
+            }
+            QToolButton#rename_action:pressed {
+                background-color: #2C4A3E;
+            }
+        """)
         
         # 設定とヘルプは上段メニューバーのみに表示
         # toolbar.addSeparator()
