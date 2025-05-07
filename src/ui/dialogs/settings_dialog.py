@@ -88,6 +88,18 @@ class SettingsDialog(BaseDialog):
         image_group.setLayout(image_layout)
         general_layout.addWidget(image_group)
         
+        # AIモデル設定
+        ai_group = QGroupBox("AIモデル設定")
+        ai_layout = QFormLayout()
+        self.model_name_combo = QComboBox()
+        self.model_name_combo.setEditable(True)
+        # 設定からモデルリストを取得して追加
+        for model in config.get("api.model_list", ["gemini-2.0-flash", "gemini-2.5-flash-preview-04-17"]):
+            self.model_name_combo.addItem(model)
+        ai_layout.addRow("モデル名:", self.model_name_combo)
+        ai_group.setLayout(ai_layout)
+        general_layout.addWidget(ai_group)
+        
         # 表示設定タブ
         display_tab = QWidget()
         display_layout = QVBoxLayout(display_tab)
@@ -135,6 +147,9 @@ class SettingsDialog(BaseDialog):
         self.max_height.setValue(resize_config.get("max_height", 1080))
         self.image_quality.setValue(resize_config.get("quality", 85))
         
+        # AIモデル設定
+        self.model_name_combo.setCurrentText(config.get("api.model_name", "gemini-2.0-flash"))
+        
         # 表示設定
         self.theme_combo.setCurrentText(
             "ダーク" if config.get("ui.theme") == "dark" else "ライト"
@@ -155,6 +170,16 @@ class SettingsDialog(BaseDialog):
         config.set("processing.image.resize.max_width", self.max_width.value())
         config.set("processing.image.resize.max_height", self.max_height.value())
         config.set("processing.image.resize.quality", self.image_quality.value())
+        
+        # AIモデル設定の保存
+        selected_model = self.model_name_combo.currentText()
+        config.set("api.model_name", selected_model)
+        # モデルリストの更新と保存
+        model_list = config.get("api.model_list", [])
+        if selected_model in model_list:
+            model_list.remove(selected_model)
+        model_list.insert(0, selected_model)
+        config.set("api.model_list", model_list)
         
         # 表示設定の保存
         config.set("ui.theme", "dark" if self.theme_combo.currentText() == "ダーク" else "light")

@@ -166,9 +166,11 @@ class ImageProcessor:
                 "response_mime_type": "application/json",
             }
             
+            # モデル名の取得
+            model_name = config.get("api.model_name", "gemini-2.0-flash")
             # Geminiモデルの作成
             self._model = genai.GenerativeModel(
-                model_name="gemini-2.0-flash",
+                model_name=model_name,
                 generation_config=self._generation_config
             )
             

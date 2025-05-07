@@ -37,7 +37,9 @@ class Config:
             },
             "api": {
                 "timeout": 30,
-                "key": None
+                "key": None,
+                "model_name": "gemini-2.0-flash",
+                "model_list": ["gemini-2.0-flash", "gemini-2.5-flash-preview-04-17"]
             },
             "ui": {
                 "font_size": 10,
