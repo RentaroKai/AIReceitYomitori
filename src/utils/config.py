@@ -7,7 +7,11 @@ class Config:
     """設定管理クラス"""
     
     def __init__(self):
-        self._config_dir = Path.home() / ".ai_receipt_extractor"
+        # マイドキュメント/Pythonフォルダ内に設定フォルダを作成
+        docs_dir = Path.home() / "Documents"
+        python_dir = docs_dir / "Python"
+        python_dir.mkdir(parents=True, exist_ok=True)
+        self._config_dir = python_dir / ".ai_receipt_extractor"
         self._config_file = self._config_dir / "config.json"
         self._config: Dict[str, Any] = {}
         
@@ -39,7 +43,7 @@ class Config:
                 "timeout": 30,
                 "key": None,
                 "model_name": "gemini-2.0-flash",
-                "model_list": ["gemini-2.0-flash", "gemini-2.5-flash-preview-04-17"]
+                "model_list": ["gemini-2.0-flash", "gemini-2.5-flash-preview-05-20"]
             },
             "ui": {
                 "font_size": 10,

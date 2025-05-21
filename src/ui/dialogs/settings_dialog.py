@@ -94,7 +94,7 @@ class SettingsDialog(BaseDialog):
         self.model_name_combo = QComboBox()
         self.model_name_combo.setEditable(True)
         # 設定からモデルリストを取得して追加
-        for model in config.get("api.model_list", ["gemini-2.0-flash", "gemini-2.5-flash-preview-04-17"]):
+        for model in config.get("api.model_list", ["gemini-2.0-flash", "gemini-2.5-flash-preview-05-20"]):
             self.model_name_combo.addItem(model)
         ai_layout.addRow("モデル名:", self.model_name_combo)
         ai_group.setLayout(ai_layout)
